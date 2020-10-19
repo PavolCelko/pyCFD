@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 
-def convection(nt, nx, tmax, xmax, c):
+def diffusion(nt, nx, tmax, xmax, nu):
     """
     Returns the velocity field and distance for 1D linear convection
     """
@@ -12,6 +12,7 @@ def convection(nt, nx, tmax, xmax, c):
     dx = xmax/(nx-1)
 
     # Initialise data structures
+
     u = np.zeros((nx,nt))
     x = np.zeros(nx)
 
@@ -27,8 +28,8 @@ def convection(nt, nx, tmax, xmax, c):
 
     # Loop
     for n in range(0,nt-1):
-      for i in range(1,nx-1):
-         u[i,n+1] = u[i,n]-u[i,n]*(dt/dx)*(u[i,n]-u[i-1,n])
+      for i in range(0,nx-1):
+         u[i,n+1] = u[i,n] + nu*(dt/dx**2.0)*(u[i+1,n]-2.0*u[i,n]+u[i-1,n])
 
     # X Loop
     for i in range(0,nx):
@@ -37,27 +38,30 @@ def convection(nt, nx, tmax, xmax, c):
     return u, x
 
 
-def plot_convection(u,x,nt,title):
+def plot_diffusion(u,x,nt,title):
     """
     Plots the 1D velocity field
     """
-
     plt.figure()
     colour=iter(cm.rainbow(np.linspace(0,10,nt)))
     for i in range(0,nt,10):
-        c=next(colour)
-        plt.plot(x,u[:,i],c=c)
+      c=next(colour)
+      plt.plot(x,u[:,i],c=c)
     plt.xlabel('x (m)')
     plt.ylabel('u (m/s)')
-    plt.ylim([0,2.2])
+    plt.ylim([0,3.0])
     plt.title(title)
     plt.show()
 
-u,x = convection(151, 51, 0.5, 2.0, 0.5)
-plot_convection(u,x,151,'Figure 1: c=0.5m/s, nt=151, nx=51, tmax=0.5s')
 
-u,x = convection(151, 302, 0.5, 2.0, 0.5)
-plot_convection(u,x,151,'Figure 2: c=0.5m/s, nt=151, nx=302, tmax=0.5s')
+u,x = diffusion(151, 51, 0.5, 2.0, 0.1)
+plot_diffusion(u,x,151,'Figure 1: nu=0.1, nt=151, nx=51, tmax=0.5s')
 
-u,x = convection(151, 51, 2.0, 2.0, 0.5)
-plot_convection(u,x,151,'Figure 3: c=0.5m/s, nt=151, nx=51, tmax=2s')
+u,x = diffusion(151, 51, 0.5, 2.0, 0.242)
+plot_diffusion(u,x,151,'Figure 1b: nu=0.242, nt=151, nx=51, tmax=0.5s')
+
+u,x = diffusion(151, 79, 0.5, 2.0, 0.1)
+plot_diffusion(u,x,151,'Figure 2: nu=0.1, nt=151, nx=79, tmax=0.5s')
+
+u,x = diffusion(151, 51, 1.217, 2.0, 0.1)
+plot_diffusion(u,x,151,'Figure 3: nu=0.1, nt=151, nx=51, tmax=1.217s')
