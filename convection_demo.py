@@ -1,67 +1,107 @@
-import numpy as np
+from math import pi as PI
+from math import exp as exp
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import numpy as np
 
 
-def diffusion(nt, nx, tmax, xmax, nu):
+def analytical_solution(NT, NX, TMAX, XMAX, NU):
+   """
+   Returns the velocity field and distance for the analytical solution
+   """
+
+   # Increments
+   DT = TMAX/(NT-1)
+   DX = XMAX/(NX-1)
+
+   # Initialise data structures
+   u_analytical = np.zeros((NX,NT))
+   x = np.zeros(NX)
+   t = np.zeros(NT)
+
+   # Distance
+   for i in range(0,NX):
+       x[i] = i*DX
+
+   # Analytical Solution
+   for n in range(0,NT):
+       t = n*DT
+
+       for i in range(0,NX):
+           phi = exp( -(x[i]-4*t)**2/(4*NU*(t+1)) ) + exp( -(x[i]-4*t-2*PI)**2/(4*NU*(t+1)) )
+
+           dphi = ( -0.5*(x[i]-4*t)/(NU*(t+1))*exp( -(x[i]-4*t)**2/(4*NU*(t+1)) )
+               -0.5*(x[i]-4*t-2*PI)/(NU*(t+1))*exp( -(x[i]-4*t-2*PI)**2/(4*NU*(t+1)) ) )
+
+           u_analytical[i,n] = -2*NU*(dphi/phi) + 4
+
+   return u_analytical, x
+
+def convection_diffusion(NT, NX, TMAX, XMAX, NU):
     """
-    Returns the velocity field and distance for 1D linear convection
+    Returns the velocity field and distance for 1D non-linear convection-diffusion
     """
     # Increments
-    dt = tmax/(nt-1)
-    dx = xmax/(nx-1)
+    DT = TMAX/(NT-1)
+    DX = XMAX/(NX-1)
 
     # Initialise data structures
+    u = np.zeros((NX,NT))
+    u_analytical = np.zeros((NX,NT))
+    x = np.zeros(NX)
+    t = np.zeros(NT)
+    ipos = np.zeros(NX, dtype=int)
+    ineg = np.zeros(NX, dtype=int)
 
-    u = np.zeros((nx,nt))
-    x = np.zeros(nx)
+    # Periodic boundary conditions
+    for i in range(0,NX):
+        x[i] = i*DX
+        ipos[i] = i+1
+        ineg[i] = i-1
 
-    # Boundary conditions
-    u[0,:] = u[nx-1,:] = 1
+    ipos[NX-1] = 0
+    ineg[0] = NX-1
 
     # Initial conditions
-    for i in range(1,nx-1):
-      if(i > (nx-1)/4 and i < (nx-1)/2):
-         u[i,0] = 2
-      else:
-         u[i,0] = 1
+    for i in range(0,NX):
+        phi = exp( -(x[i]**2)/(4*NU) ) + exp( -(x[i]-2*PI)**2 / (4*NU) )
+        dphi = -(0.5*x[i]/NU)*exp( -(x[i]**2) / (4*NU) ) - (0.5*(x[i]-2*PI) / NU )*exp(-(x[i]-2*PI)**2 / (4*NU) )
+        u[i,0] = -2*NU*(dphi/phi) + 4
 
-    # Loop
-    for n in range(0,nt-1):
-      for i in range(0,nx-1):
-         u[i,n+1] = u[i,n] + nu*(dt/dx**2.0)*(u[i+1,n]-2.0*u[i,n]+u[i-1,n])
-
-    # X Loop
-    for i in range(0,nx):
-      x[i] = i*dx
+    # Numerical solution
+    for n in range(0,NT-1):
+        for i in range(0,NX):
+            u[i,n+1] = (u[i,n]-u[i,n]*(DT/DX)*(u[i,n]-u[ineg[i],n]) + \
+                        NU*(DT/DX**2)*(u[ipos[i],n]-2*u[i,n]+u[ineg[i],n]))
 
     return u, x
 
-
-def plot_diffusion(u,x,nt,title):
+def plot_diffusion(u_analytical,u,x,NT,TITLE):
     """
     Plots the 1D velocity field
     """
     plt.figure()
-    colour=iter(cm.rainbow(np.linspace(0,10,nt)))
-    for i in range(0,nt,10):
+    ax=plt.subplot(111)
+    colour=iter(cm.rainbow(np.linspace(0,20,NT)))
+    for n in range(0,NT,20):
       c=next(colour)
-      plt.plot(x,u[:,i],c=c)
-    plt.xlabel('x (m)')
+      ax.plot(x,u[:,n],'ko', markerfacecolor='none', alpha=0.5, label='i='+str(n)+' numerical')
+      ax.plot(x,u_analytical[:,n],linestyle='-',c=c,label='i='+str(n)+' analytical')
+    box=ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width*0.7,box.height])
+    ax.legend( bbox_to_anchor=(1.02,1), loc=2)
+    plt.xlabel('x (radians)')
     plt.ylabel('u (m/s)')
-    plt.ylim([0,3.0])
-    plt.title(title)
+    plt.ylim([0,8.0])
+    plt.xlim([0,2.0*PI])
+    plt.title(TITLE)
     plt.show()
 
 
-u,x = diffusion(151, 51, 0.5, 2.0, 0.1)
-plot_diffusion(u,x,151,'Figure 1: nu=0.1, nt=151, nx=51, tmax=0.5s')
+u,x = convection_diffusion(151, 151, 0.5, 2.0*PI, 0.1)
+u_analytical,x = analytical_solution(151, 151, 0.5, 2.0*PI, 0.1)
+plot_diffusion(u_analytical,u,x,151,'Figure 1: nu=0.1, nt=151, nx=151, tmax=0.5s')
 
-u,x = diffusion(151, 51, 0.5, 2.0, 0.242)
-plot_diffusion(u,x,151,'Figure 1b: nu=0.242, nt=151, nx=51, tmax=0.5s')
-
-u,x = diffusion(151, 79, 0.5, 2.0, 0.1)
-plot_diffusion(u,x,151,'Figure 2: nu=0.1, nt=151, nx=79, tmax=0.5s')
-
-u,x = diffusion(151, 51, 1.217, 2.0, 0.1)
-plot_diffusion(u,x,151,'Figure 3: nu=0.1, nt=151, nx=51, tmax=1.217s')
+u,x = convection_diffusion(151, 151, 0.5, 2.0*PI, 0.01)
+u_analytical,x = analytical_solution(151, 151, 0.5, 2.0*PI, 0.01)
+plot_diffusion(u_analytical,u,x,151,'Figure 2: nu=0.01, nt=151, nx=151, tmax=0.5s')
