@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 
 def navier_stokes_initialisation(niter, r, nx_or_ny, tmax, xmax_or_ymax, nu):
@@ -241,9 +242,13 @@ def plot_diffusion_2(u1, u2, u3, y1, y2, y3, NX):
    plt.show()
 
 
+time_stamp_start = time.time()
+
 u002, v002, p002, x002, y002 = navier_stokes_equation_accurate(50, 51, 1.0, 0.1, 0.25, 2.0)
 u003, v003, p003, x003, y003 = navier_stokes_equation_accurate(50, 41, 1.0, 0.1, 0.25, 2.0)
 # plot_diffusion_2(u002,u003,y002,y003,51)
+
+time_stamp_end = time.time()
 
 u_analytic, y_analytic = parallel_plates_analytical(2.0, 51, 0.1)
 plot_diffusion_2(u002,u003,u_analytic,y002,y003,y_analytic,51)
@@ -260,4 +265,6 @@ plot_diffusion_2(u002,u003,u_analytic,y002,y003,y_analytic,51)
 # plot_3D(v60,x60,y60,'Figure 2: Final Conditions','v (m/s)')
 # plot_3D(p60,x60,y60,'Figure 3: Final Conditions','p (Pa)')
 
-
+time_duration = time_stamp_end - time_stamp_start
+print("duration {:f}".format(time_duration))
+print("palko")
