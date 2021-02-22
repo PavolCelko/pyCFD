@@ -184,10 +184,6 @@ while udiff > .001:
 	stepcount += 1
 	print(stepcount)
 
-fig = pyplot.figure(figsize=(11, 7), dpi=100)
-pyplot.quiver(X[::3, ::3], Y[::3, ::3], u[::3, ::3], v[::3, ::3]);
-pyplot.show()
-
-fig = pyplot.figure(figsize=(11, 7), dpi=100)
-pyplot.quiver(X, Y, u, v);
+pyplot.imshow(u, cmap='jet')
+pyplot.colorbar()
 pyplot.show()
