@@ -61,7 +61,7 @@ def pressure_poisson_periodic(p, dx, dy):
 
 
 ##variable declarations
-pipe_len   = 2
+pipe_len   = 20
 pipe_width = 2
 
 nx = pipe_len * 20 + 1
@@ -78,9 +78,9 @@ X, Y = numpy.meshgrid(x, y)
 
 ##physical variables
 rho = 1
-nu = .1
+nu = .3
 F = 1
-dt = .01
+dt = .001
 
 #initial conditions
 u = numpy.zeros((ny, nx))
