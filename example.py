@@ -61,15 +61,18 @@ def pressure_poisson_periodic(p, dx, dy):
 
 
 ##variable declarations
-nx = 41
-ny = 41
+pipe_len   = 2
+pipe_width = 2
+
+nx = pipe_len * 20 + 1
+ny = pipe_width * 20 + 1
 nt = 10
 nit = 50
 c = 1
-dx = 2 / (nx - 1)
-dy = 2 / (ny - 1)
-x = numpy.linspace(0, 2, nx)
-y = numpy.linspace(0, 2, ny)
+dx = pipe_len / (nx - 1)
+dy = pipe_width / (ny - 1)
+x = numpy.linspace(0, pipe_len, nx)
+y = numpy.linspace(0, pipe_width, ny)
 X, Y = numpy.meshgrid(x, y)
 
 
