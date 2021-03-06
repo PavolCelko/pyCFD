@@ -24,11 +24,6 @@ def pressure_poisson(p, dx, dy, b):
 						 dx ** 2 * dy ** 2 / (2 * (dx ** 2 + dy ** 2)) *
 						 b[1:-1, 1:-1])
 
-		# p[:, -1] = p[:, -2]  # dp/dx = 0 at x = 2
-		# p[0, :] = p[1, :]  # dp/dy = 0 at y = 0
-		# p[:, 0] = p[:, 1]  # dp/dx = 0 at x = 0
-		# p[-1, :] = 0  # p = 0 at y = 2
-
 		p[:, -1] = 0  # p = 0 at x = 2
 		p[:, 0] = 100   # p = MAX at x = 0
 		p[0, :] = p[1, :]  # dp/dy = 0 at y = 0
@@ -56,7 +51,6 @@ X, Y = numpy.meshgrid(x, y)
 ##physical variables
 rho = 1
 nu = .3
-F = 1
 dt = .001
 
 #initial conditions
@@ -106,24 +100,15 @@ def cavity_flow(nt, u, v, dt, dx, dy, p, rho, nu):
 							   dt / dy ** 2 *
 							   (vn[2:, 1:-1] - 2 * vn[1:-1, 1:-1] + vn[0:-2, 1:-1])))
 
-		# u[0, :] = 0
-		# u[:, 0] = 0
-		# u[:, -1] = 0
-		# u[-1, :] = 1  # set velocity on cavity lid equal to 1
-		# v[0, :] = 0
-		# v[-1, :] = 0
-		# v[:, 0] = 0
-		# v[:, -1] = 0
-
 		u[0, :] = 0
 		v[0, :] = 0
 		u[-1, :] = 0
 		v[-1, :] = 0
 
-		u[:, 0] = u[:, 1]
-		u[:, -1] = u[:, -2]
-		v[:, 0] = v[:, 1]
-		v[:, -1] = v[:, -2]
+		u[:, 0] = 10 # BC u at at x = 0
+		v[:, 0] = 0  # BC v at at x = 0
+		# u[:, -1] = 0 # BC u at at x = 2
+		# v[:, -1] = 0 # BC v at at x = 2
 
 	return u, v, p
 
