@@ -24,10 +24,16 @@ def pressure_poisson(p, dx, dy, b):
 						 dx ** 2 * dy ** 2 / (2 * (dx ** 2 + dy ** 2)) *
 						 b[1:-1, 1:-1])
 
-		p[:, -1] = 0  # p = 0 at x = 2
-		p[:, 0] = 100   # p = MAX at x = 0
-		p[0, :] = p[1, :]  # dp/dy = 0 at y = 0
-		p[-1, :] = p[-2, :]  # dp/dy = 0 at y = 2
+		# wall BCs
+		p[0, :] = p[1, :]    # dp/dy = 0 at down wall
+		p[-1, :] = p[-2, :]  # dp/dy = 0 at upper wall
+
+		# inlet BC
+		# these are not ordinary BCs, just the inlet pressure is out of area of calculation
+		p[:, 0] = p[:, 1]  # p at inlet
+		# p[:, 0] = 10   # p = MAX at inlet
+		# outlet BC
+		p[:, -1] = 0  # p = 0 at outlet
 
 	return p
 
@@ -38,7 +44,7 @@ pipe_width = 2
 
 nx = pipe_len * 20 + 1
 ny = pipe_width * 20 + 1
-nt = 10
+# nt = 10
 nit = 50
 c = 1
 dx = pipe_len / (nx - 1)
@@ -50,8 +56,10 @@ X, Y = numpy.meshgrid(x, y)
 
 ##physical variables
 rho = 1
-nu = .3
-dt = .001
+nu = .1
+dt = .001/2
+durat = 1
+u_inlet = 10
 
 #initial conditions
 u = numpy.zeros((ny, nx))
@@ -72,6 +80,16 @@ def cavity_flow(nt, u, v, dt, dx, dy, p, rho, nu):
 	b = numpy.zeros((ny, nx))
 
 	for n in range(nt):
+		# wall BC - no slip on the walls
+		# u[0, :] = 0
+		# v[0, :] = 0
+		# u[-1, :] = 0
+		# v[-1, :] = 0
+		#
+		# u[1:-1, 0] = u_inlet # BC u at x = 0
+		# v[1:-1, 0] = 0  # BC v at x = 0
+		# u[1:-1, -1] = u[1:-1, -2] # BC u at x = 0
+
 		un = u.copy()
 		vn = v.copy()
 
@@ -100,15 +118,20 @@ def cavity_flow(nt, u, v, dt, dx, dy, p, rho, nu):
 							   dt / dy ** 2 *
 							   (vn[2:, 1:-1] - 2 * vn[1:-1, 1:-1] + vn[0:-2, 1:-1])))
 
+		# wall BCs - no slip on the walls
 		u[0, :] = 0
 		v[0, :] = 0
 		u[-1, :] = 0
 		v[-1, :] = 0
 
-		u[:, 0] = 10 # BC u at at x = 0
-		v[:, 0] = 0  # BC v at at x = 0
-		# u[:, -1] = 0 # BC u at at x = 2
-		# v[:, -1] = 0 # BC v at at x = 2
+		# inlet BCs
+		u[1:-1, 0] = u_inlet  # BC u at inlet
+		# u[1:-1, 0] = u[1:-1, 1]  # BC u at inlet
+		v[1:-1, 0] = 0        # BC v at inlet
+
+		# these are not ordinary BCs, just the outlet velocity is out of area of calculation
+		u[1:-1, -1] = u[1:-1, -2]  # u at outlet layer
+		v[1:-1, -1] = v[1:-1, -2]  # v at outlet layer
 
 	return u, v, p
 
@@ -117,9 +140,19 @@ u = numpy.zeros((ny, nx))
 v = numpy.zeros((ny, nx))
 p = numpy.zeros((ny, nx))
 b = numpy.zeros((ny, nx))
-nt = 1000
+nt = int(durat / dt)
 u, v, p = cavity_flow(nt, u, v, dt, dx, dy, p, rho, nu)
+
+# print(u[20, -3:])
+# print(p[20, -3:])
+print("pressure outlet : {:0.2f}  {:0.2f}  {:0.2f}".format(*tuple(p[20, -3:])))
+print("pressure inlet  : {:0.2f}  {:0.2f}  {:0.2f}".format(*tuple(p[20, :3])))
+print("velocity outlet : {:0.2f}  {:0.2f}  {:0.2f}".format(*tuple(u[20, -3:])))
+print("velocity inlet  : {:0.2f}  {:0.2f}  {:0.2f}".format(*tuple(u[20, :3])))
 
 pyplot.imshow(u, cmap='jet')
 pyplot.colorbar()
 pyplot.show()
+
+# pyplot.plot(x, u[20, :])
+# pyplot.show()
