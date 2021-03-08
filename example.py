@@ -41,14 +41,14 @@ def pressure_poisson(p, dx, dy, b):
 
 
 ##variable declarations
-pipe_len   = 10
-pipe_width = 2
+pipe_len   =  5 * 1e-3
+pipe_width =  0.3 * 1e-3
 
-nx = pipe_len * 20 + 1
-ny = pipe_width * 20 + 1
+nx = int(pipe_len * 20 * 1e3) + 1
+ny = int(pipe_width * 20 * 1e3) + 1
 # nt = 10
 nit = 50
-c = 1
+
 dx = pipe_len / (nx - 1)
 dy = pipe_width / (ny - 1)
 x = numpy.linspace(0, pipe_len, nx)
@@ -57,12 +57,12 @@ X, Y = numpy.meshgrid(x, y)
 
 
 ##physical variables
-rho = 1
-nu = .3
-dt = .001/1
-durat = 10
+rho = 868
+nu = 50e-6
+dt = .001/10000
+durat = 0.001
 u_inlet = 10
-p_inlet = 88
+p_inlet = 10e5
 
 #initial conditions
 u = numpy.zeros((ny, nx))
@@ -83,16 +83,6 @@ def cavity_flow(nt, u, v, dt, dx, dy, p, rho, nu):
 	b = numpy.zeros((ny, nx))
 
 	for n in range(nt):
-		# wall BC - no slip on the walls
-		# u[0, :] = 0
-		# v[0, :] = 0
-		# u[-1, :] = 0
-		# v[-1, :] = 0
-		#
-		# u[1:-1, 0] = u_inlet # BC u at x = 0
-		# v[1:-1, 0] = 0  # BC v at x = 0
-		# u[1:-1, -1] = u[1:-1, -2] # BC u at x = 0
-
 		un = u.copy()
 		vn = v.copy()
 
@@ -158,6 +148,7 @@ print("nu={:0.1f} u_in={:d} durat={:0.1f}		dt={:0.2f}ms nx={:d} ny={:d}".format(
 print("pressure inlet  : {:0.2f}".format(*tuple(p[int(ny/2), :1])))
 print("mean velocity inlet   : {:0.2f} ".format((numpy.mean(u[1:-1, 0]))))
 print("mean velocity outlet  : {:0.2f} ".format((numpy.mean(u[1:-1, -1]))))
+print("outlet flow : {:0.3f} cm2/ms".format(sum(u[:, -1] * dy) * 1e4 / 1e3))
 
 
 
