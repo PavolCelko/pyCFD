@@ -6,10 +6,10 @@ import time
 start_time = time.time()
 
 def build_up_b(b, rho, dt, u, v, dx, dy):
-	b[1:-1, 1:-1] = (rho * ( - ((u[1:-1, 2:] - u[1:-1, 0:-2]) / (2 * dx)) ** 2 -
-							2 * ((u[2:, 1:-1] - u[0:-2, 1:-1]) / (2 * dy) *
-								 (v[1:-1, 2:] - v[1:-1, 0:-2]) / (2 * dx)) -
-							((v[2:, 1:-1] - v[0:-2, 1:-1]) / (2 * dy)) ** 2))
+	b[1:-1, 1:-1] = (rho * ( - ((u[1:-1, 2:] - u[1:-1, 0:-2]) / (xx[1:-1, 2:] - xx[1:-1, 0:-2])) ** 2 -
+							2 * ((u[2:, 1:-1] - u[0:-2, 1:-1]) / (yy[2:, 1:-1] - yy[0:-2, 1:-1]) *
+								 (v[1:-1, 2:] - v[1:-1, 0:-2]) / (xx[1:-1, 2:] - xx[1:-1, 0:-2])) -
+							((v[2:, 1:-1] - v[0:-2, 1:-1]) / (yy[2:, 1:-1] - yy[0:-2, 1:-1])) ** 2))
 
 	return b
 
@@ -17,6 +17,8 @@ def build_up_b(b, rho, dt, u, v, dx, dy):
 def pressure_poisson(p, dx, dy, b):
 	pn = numpy.empty_like(p)
 	pn = p.copy()
+	dx = xx[1:-1, 1:-1] - xx[1:-1, 0:-2]
+	dy = yy[1:-1, 1:-1] - yy[0:-2, 1:-1]
 
 	for q in range(nit):
 		pn = p.copy()
@@ -54,8 +56,10 @@ dy = pipe_width / (ny - 1)
 x = numpy.linspace(0, pipe_len, nx)
 y = numpy.linspace(0, pipe_width, ny)
 X, Y = numpy.meshgrid(x, y)
-
-
+# pipe_array_x = numpy.array([x for i in range(len(y))])
+# pipe_array_y = numpy.array([y for i in range(len(x))])
+xx = numpy.array([x for i in range(len(y))])
+yy = numpy.array([y for i in range(len(x))]).transpose()
 ##physical variables
 rho = 868
 nu = 50e-6
@@ -88,6 +92,9 @@ def cavity_flow(nt, u, v, dt, dx, dy, p, rho, nu):
 
 		b = build_up_b(b, rho, dt, u, v, dx, dy)
 		p = pressure_poisson(p, dx, dy, b)
+
+		dx = xx[1:-1, 1:-1] - xx[1:-1, 0:-2]
+		dy = yy[1:-1, 1:-1] - yy[0:-2, 1:-1]
 
 		u[1:-1, 1:-1] = (un[1:-1, 1:-1] -
 						 un[1:-1, 1:-1] * dt / dx *
@@ -150,6 +157,12 @@ print("mean velocity inlet   : {:0.2f} ".format((numpy.mean(u[1:-1, 0]))))
 print("mean velocity outlet  : {:0.2f} ".format((numpy.mean(u[1:-1, -1]))))
 print("outlet flow : {:0.3f} cm2/ms".format(sum(u[:, -1] * dy) * 1e4 / 1e3))
 
+numpy.save("x_coord_array", x)
+numpy.save("y_coord_array", y)
+numpy.save("xx_coord_array", xx)
+numpy.save("yy_coord_array", yy)
+numpy.save("pressure_array", p)
+numpy.save("velocity_array", u)
 
 
 pyplot.subplot(4, 1, 1)
