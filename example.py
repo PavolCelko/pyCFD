@@ -33,7 +33,11 @@ def pressure_poisson(p, dx, dy, b):
 		p[-1, :] = p[-2, :]  # dp/dy = 0 at upper wall
 
 		# inlet BC
-		p[:, 0] = p_inlet   # p = MAX at inlet
+		# p[:, 0] = p_inlet   # p = MAX at inlet
+
+		p[0, :40] = p_inlet   # p = MAX at inlet
+		p[:, 0] = p[:, 1]  # dp/dx = 0 at front wall
+
 		# these are not ordinary BCs, just the inlet pressure is out of area of calculation
 		# p[:, 0] = p[:, 1]  # p at inlet
 		# outlet BC
@@ -44,7 +48,7 @@ def pressure_poisson(p, dx, dy, b):
 
 ##variable declarations
 pipe_len   =  5 * 1e-3
-pipe_width =  0.3 * 1e-3
+pipe_width =  1 * 1e-3
 
 nx = int(pipe_len * 20 * 1e3) + 1
 ny = int(pipe_width * 20 * 1e3) + 1
@@ -64,9 +68,9 @@ yy = numpy.array([y for i in range(len(x))]).transpose()
 rho = 868
 nu = 50e-6
 dt = .001/10000
-durat = 0.001
+durat = 0.003
 u_inlet = 10
-p_inlet = 10e5
+p_inlet = 0.1e5
 
 #initial conditions
 u = numpy.zeros((ny, nx))
@@ -127,8 +131,12 @@ def cavity_flow(nt, u, v, dt, dx, dy, p, rho, nu):
 		# inlet BCs
 		# u[1:-1, 0] = u_inlet  # BC u at inlet
 		# u[1:-1, 0] = u[1:-1, 1]  # BC u at inlet
-		u[1:-1, 0] = numpy.mean(u[1:-1, -1])  # BC u at inlet
-		v[1:-1, 0] = 0        # BC v at inlet
+		# u[1:-1, 0] = numpy.mean(u[1:-1, -1])  # BC u at inlet
+		# v[1:-1, 0] = 0        # BC v at inlet
+		u[1:-1, 0] = 0  # BC u at front wall
+		v[1:-1, 0] = 0        # BC v at front wall
+		u[0, :40] = 0
+		v[0, :40] = numpy.mean(u[1:-1, -1]) + numpy.mean(v[1:-1, -1])
 
 		# these are not ordinary BCs, just the outlet velocity is out of area of calculation
 		u[1:-1, -1] = u[1:-1, -2]  # u at outlet layer
