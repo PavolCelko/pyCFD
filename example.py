@@ -119,30 +119,30 @@ def main():
 	dur = 0.003
 
 	# pressure iterator
-	npit = 70
+	np_init = 10
 	# p_inlet = 15e5
+	numpy.seterr(invalid='raise')
+	numpy.seterr(over='raise')
 
 	for p_bars in range(1, 24, 1):
-		# np_start = npit
-		# np_end = npit + 110
-		# for np in range(np_start, np_end):
-		# 	print("np = {:d}".format(np))
-		# 	try:
-		p_inlet = p_bars * 1e5
-		# simulate flow
-		start_time = time.time()
-		pipe = Pipeline(dt=dt, duration=dur, p_inlet=p_inlet, x=x, y=y, np=npit, rho=rho, nu=nu)
-		u, v, p, xx, yy = pipe.cavity_flow()
-		# (u, v, p, xx, yy) = (pipe.u, pipe.v, pipe.p, pipe.xx, pipe.yy)
-		end_time = time.time()
-			# except RuntimeWarning:
-			# 	continue
-			# else:
-			# 	npit = np
-			# 	break
+		for np in range(np_init, 210, 10):
+			print("np = {:d}".format(np))
+			try:
+				p_inlet = p_bars * 1e5
+				# simulate flow
+				start_time = time.time()
+				pipe = Pipeline(dt=dt, duration=dur, p_inlet=p_inlet, x=x, y=y, np=np, rho=rho, nu=nu)
+				u, v, p, xx, yy = pipe.cavity_flow()
+				# (u, v, p, xx, yy) = (pipe.u, pipe.v, pipe.p, pipe.xx, pipe.yy)
+				end_time = time.time()
+			except FloatingPointError:
+				continue
+			else:
+				np_init = np
+				break
 
 		print("script run for {:0.0f} seconds".format(end_time - start_time))
-		print("rho={:0.0f} nu={:0.1f} duration={:0.0f}ms		dt={:0.3f}us nx={:d} ny={:d} npit={:d}".format(rho, nu, dur*1e3,		dt*1e6, nx, ny, npit))
+		print("rho={:0.0f} nu={:0.1f} duration={:0.0f}ms		dt={:0.3f}us nx={:d} ny={:d} npit={:d}".format(rho, nu, dur*1e3,		dt*1e6, nx, ny, np))
 		print("pressure inlet  : {:0.2f}".format(*tuple(p[int(ny/2), :1])))
 		print("mean velocity inlet   : {:0.2f} ".format((numpy.mean(u[1:-1, 0]))))
 		print("mean velocity outlet  : {:0.2f} ".format((numpy.mean(u[1:-1, -1]))))
