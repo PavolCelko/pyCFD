@@ -2,6 +2,7 @@ import numpy
 from matplotlib import pyplot
 import time
 
+
 class Pipeline:
 	def __init__(self, dt, duration, x, y, np=50, rho=858, nu=50e-6, p_inlet=None, u_inlet=None, v_inlet=None):
 		self.rho = rho
@@ -12,7 +13,6 @@ class Pipeline:
 
 		self.xx = numpy.array([x for i in range(len(y))])
 		self.yy = numpy.array([y for i in range(len(x))]).transpose()
-
 		self.dx = self.xx[1:-1, 1:-1] - self.xx[1:-1, 0:-2]
 		self.dy = self.yy[1:-1, 1:-1] - self.yy[0:-2, 1:-1]
 
@@ -20,7 +20,6 @@ class Pipeline:
 		self.v = numpy.zeros(self.xx.shape)
 		self.p = numpy.zeros(self.xx.shape)
 		self.b = numpy.zeros(self.xx.shape)
-		# self.b = numpy.zeros((ny, nx))
 
 		self.p_inlet = p_inlet
 		self.u_inlet = u_inlet
@@ -32,19 +31,15 @@ class Pipeline:
 									 (self.v[1:-1, 2:] - self.v[1:-1, 0:-2]) / (self.xx[1:-1, 2:] - self.xx[1:-1, 0:-2])) -
 								((self.v[2:, 1:-1] - self.v[0:-2, 1:-1]) / (self.yy[2:, 1:-1] - self.yy[0:-2, 1:-1])) ** 2))
 
-		return self.b
-
 	def pressure_poisson(self):
-		# dx = self.xx[1:-1, 1:-1] - self.xx[1:-1, 0:-2]
-		# dy = self.yy[1:-1, 1:-1] - self.yy[0:-2, 1:-1]
 
 		for i in range(self.np_iter):
 			pn = self.p.copy()
 			self.p[1:-1, 1:-1] = (((pn[1:-1, 2:] + pn[1:-1, 0:-2]) * self.dy ** 2 +
-							  (pn[2:, 1:-1] + pn[0:-2, 1:-1]) * self.dx ** 2) /
-							 (2 * (self.dx ** 2 + self.dy ** 2)) -
-							 self.dx ** 2 * self.dy ** 2 / (2 * (self.dx ** 2 + self.dy ** 2)) *
-							 self.b[1:-1, 1:-1])
+								(pn[2:, 1:-1] + pn[0:-2, 1:-1]) * self.dx ** 2) /
+								(2 * (self.dx ** 2 + self.dy ** 2)) -
+								self.dx ** 2 * self.dy ** 2 / (2 * (self.dx ** 2 + self.dy ** 2)) *
+								self.b[1:-1, 1:-1])
 
 			# wall BCs
 			self.p[0, :] = self.p[1, :]    # dp/dy = 0 at down wall
@@ -57,71 +52,59 @@ class Pipeline:
 			# outlet BC
 			self.p[:, -1] = 0  # p = 0 at outlet
 
-		return self.p
-
-	# def cavity_flow(self, nt, dt, xx, yy, u, v, p, rho, nu):
 	def cavity_flow(self):
-		nt = self.nt
-		dt = self.dt
-		xx = self.xx
-		yy = self.yy
-		u = self.u
-		v = self.v
-		p = self.p
-		rho = self.rho
-		nu = self.nu
 
-		for n in range(nt):
-			un = u.copy()
-			vn = v.copy()
+		for n in range(self.nt):
+			un = self.u.copy()
+			vn = self.v.copy()
 
-			b_field = self.build_up_b()
-			# p = self.pressure_poisson(xx, yy, p, b_field)
-			p = self.pressure_poisson()
+			self.build_up_b()
+			self.pressure_poisson()
 
-			dx = xx[1:-1, 1:-1] - xx[1:-1, 0:-2]
-			dy = yy[1:-1, 1:-1] - yy[0:-2, 1:-1]
+			self.u[1:-1, 1:-1] = (un[1:-1, 1:-1] -
+							un[1:-1, 1:-1] * self.dt / self.dx *
+							(un[1:-1, 1:-1] - un[1:-1, 0:-2]) -
+							vn[1:-1, 1:-1] * self.dt / self.dy *
+							(un[1:-1, 1:-1] - un[0:-2, 1:-1]) -
+							self.dt / (2 * self.rho * self.dx) * (self.p[1:-1, 2:] - self.p[1:-1, 0:-2]) +
+							self.nu * (self.dt / self.dx ** 2 *
+									(un[1:-1, 2:] - 2 * un[1:-1, 1:-1] + un[1:-1, 0:-2]) +
+									self.dt / self.dy ** 2 *
+									(un[2:, 1:-1] - 2 * un[1:-1, 1:-1] + un[0:-2, 1:-1])))
 
-			u[1:-1, 1:-1] = (un[1:-1, 1:-1] -
-							 un[1:-1, 1:-1] * dt / dx *
-							 (un[1:-1, 1:-1] - un[1:-1, 0:-2]) -
-							 vn[1:-1, 1:-1] * dt / dy *
-							 (un[1:-1, 1:-1] - un[0:-2, 1:-1]) -
-							 dt / (2 * rho * dx) * (p[1:-1, 2:] - p[1:-1, 0:-2]) +
-							 nu * (dt / dx ** 2 *
-								   (un[1:-1, 2:] - 2 * un[1:-1, 1:-1] + un[1:-1, 0:-2]) +
-								   dt / dy ** 2 *
-								   (un[2:, 1:-1] - 2 * un[1:-1, 1:-1] + un[0:-2, 1:-1])))
-
-			v[1:-1, 1:-1] = (vn[1:-1, 1:-1] -
-							 un[1:-1, 1:-1] * dt / dx *
-							 (vn[1:-1, 1:-1] - vn[1:-1, 0:-2]) -
-							 vn[1:-1, 1:-1] * dt / dy *
-							 (vn[1:-1, 1:-1] - vn[0:-2, 1:-1]) -
-							 dt / (2 * rho * dy) * (p[2:, 1:-1] - p[0:-2, 1:-1]) +
-							 nu * (dt / dx ** 2 *
-								   (vn[1:-1, 2:] - 2 * vn[1:-1, 1:-1] + vn[1:-1, 0:-2]) +
-								   dt / dy ** 2 *
-								   (vn[2:, 1:-1] - 2 * vn[1:-1, 1:-1] + vn[0:-2, 1:-1])))
+			self.v[1:-1, 1:-1] = (vn[1:-1, 1:-1] -
+							un[1:-1, 1:-1] * self.dt / self.dx *
+							(vn[1:-1, 1:-1] - vn[1:-1, 0:-2]) -
+							vn[1:-1, 1:-1] * self.dt / self.dy *
+							(vn[1:-1, 1:-1] - vn[0:-2, 1:-1]) -
+							self.dt / (2 * self.rho * self.dy) * (self.p[2:, 1:-1] - self.p[0:-2, 1:-1]) +
+							self.nu * (self.dt / self.dx ** 2 *
+									(vn[1:-1, 2:] - 2 * vn[1:-1, 1:-1] + vn[1:-1, 0:-2]) +
+									self.dt / self.dy ** 2 *
+									(vn[2:, 1:-1] - 2 * vn[1:-1, 1:-1] + vn[0:-2, 1:-1])))
 
 			# wall BCs - no slip on the walls
-			u[0, :] = 0
-			v[0, :] = 0
-			u[-1, :] = 0
-			v[-1, :] = 0
+			self.u[0, :] = 0
+			self.v[0, :] = 0
+			self.u[-1, :] = 0
+			self.v[-1, :] = 0
 
 			# inlet BCs
-			u[1:-1, 0] = numpy.mean(u[1:-1, -1])  # BC u at inlet
-			v[1:-1, 0] = 0        # BC v at inlet
+			self.u[1:-1, 0] = numpy.mean(self.u[1:-1, -1])  # BC u at inlet
+			self.v[1:-1, 0] = 0        # BC v at inlet
 
 			# these are not ordinary BCs, just the outlet velocity is out of area of calculation
-			u[1:-1, -1] = u[1:-1, -2]  # u at outlet layer
-			v[1:-1, -1] = v[1:-1, -2]  # v at outlet layer
+			self.u[1:-1, -1] = self.u[1:-1, -2]  # u at outlet layer
+			self.v[1:-1, -1] = self.v[1:-1, -2]  # v at outlet layer
 
-		return u, v, p, self.xx, self.yy
+		return self.u, self.v, self.p, self.xx, self.yy
 
 
 def main():
+	# fluid physics constants
+	rho = 868
+	nu = 50e-6
+
 	# geometry and scaling
 	pipe_len   = 5 * 1e-3
 	pipe_width = 0.7 * 1e-3
@@ -130,45 +113,51 @@ def main():
 	x = numpy.linspace(0, pipe_len, nx)
 	y = numpy.linspace(0, pipe_width, ny)
 	X, Y = numpy.meshgrid(x, y)
-	# xx = numpy.array([x for i in range(len(y))])
-	# yy = numpy.array([y for i in range(len(x))]).transpose()
-
-	# fluid physics constants
-	rho = 868
-	nu = 50e-6
 
 	# timings
 	dt = .001/10000
-	durat = 0.001
-	start_time = time.time()
+	dur = 0.003
 
 	# pressure iterator
-	npit = 50
-	p_inlet = 15e5
+	npit = 70
+	# p_inlet = 15e5
 
-	pipe = Pipeline(dt=dt, duration=durat, p_inlet=p_inlet, x=x, y=y, np=npit, rho=858, nu=50e-6)
+	for p_bars in range(1, 24, 1):
+		# np_start = npit
+		# np_end = npit + 110
+		# for np in range(np_start, np_end):
+		# 	print("np = {:d}".format(np))
+		# 	try:
+		p_inlet = p_bars * 1e5
+		# simulate flow
+		start_time = time.time()
+		pipe = Pipeline(dt=dt, duration=dur, p_inlet=p_inlet, x=x, y=y, np=npit, rho=rho, nu=nu)
+		u, v, p, xx, yy = pipe.cavity_flow()
+		# (u, v, p, xx, yy) = (pipe.u, pipe.v, pipe.p, pipe.xx, pipe.yy)
+		end_time = time.time()
+			# except RuntimeWarning:
+			# 	continue
+			# else:
+			# 	npit = np
+			# 	break
 
-	u, v, p, xx, yy = pipe.cavity_flow()
+		print("script run for {:0.0f} seconds".format(end_time - start_time))
+		print("rho={:0.0f} nu={:0.1f} duration={:0.0f}ms		dt={:0.3f}us nx={:d} ny={:d} npit={:d}".format(rho, nu, dur*1e3,		dt*1e6, nx, ny, npit))
+		print("pressure inlet  : {:0.2f}".format(*tuple(p[int(ny/2), :1])))
+		print("mean velocity inlet   : {:0.2f} ".format((numpy.mean(u[1:-1, 0]))))
+		print("mean velocity outlet  : {:0.2f} ".format((numpy.mean(u[1:-1, -1]))))
+		print("outlet flow : {:0.3f} cm2/ms".format(sum(u[1:-1, -1] * (yy[1:-1, -1] - yy[0:-2, -1])) * 1e4 / 1e3))
+
+		numpy.save("simul_output/x_coord_array"  + str(p_bars), x)
+		numpy.save("simul_output/y_coord_array"  + str(p_bars), y)
+		numpy.save("simul_output/xx_coord_array" + str(p_bars), xx)
+		numpy.save("simul_output/yy_coord_array" + str(p_bars), yy)
+		numpy.save("simul_output/pressure_array" + str(p_bars), p)
+		numpy.save("simul_output/velocity_array" + str(p_bars), u)
 
 	sum_u = numpy.zeros((1, nx))
 	for i in range(nx):
 		sum_u[0, i] = numpy.mean(u[1:-1, i])
-
-	end_time = time.time()
-
-	print("script run for {:0.0f} seconds".format(end_time - start_time))
-	print("nu={:0.1f} durat={:0.0f}ms		dt={:0.3f}us nx={:d} ny={:d}".format(nu, durat*1e3,		dt*1e6, nx, ny))
-	print("pressure inlet  : {:0.2f}".format(*tuple(p[int(ny/2), :1])))
-	print("mean velocity inlet   : {:0.2f} ".format((numpy.mean(u[1:-1, 0]))))
-	print("mean velocity outlet  : {:0.2f} ".format((numpy.mean(u[1:-1, -1]))))
-	print("outlet flow : {:0.3f} cm2/ms".format(sum(u[1:-1, -1] * (yy[1:-1, -1] - yy[0:-2, -1])) * 1e4 / 1e3))
-
-	numpy.save("x_coord_array", x)
-	numpy.save("y_coord_array", y)
-	numpy.save("xx_coord_array", xx)
-	numpy.save("yy_coord_array", yy)
-	numpy.save("pressure_array", p)
-	numpy.save("velocity_array", u)
 
 	pyplot.subplot(4, 1, 1)
 	pyplot.imshow(u, cmap='jet')
