@@ -44,7 +44,7 @@ def pressure_poisson(p, dx, dy, b):
 
 ##variable declarations
 pipe_len   =  5 * 1e-3
-pipe_width =  0.3 * 1e-3
+pipe_width =  0.7 * 1e-3
 
 nx = int(pipe_len * 20 * 1e3) + 1
 ny = int(pipe_width * 20 * 1e3) + 1
@@ -65,8 +65,7 @@ rho = 868
 nu = 50e-6
 dt = .001/10000
 durat = 0.001
-u_inlet = 10
-p_inlet = 10e5
+p_inlet = 15e5
 
 #initial conditions
 u = numpy.zeros((ny, nx))
@@ -125,8 +124,6 @@ def cavity_flow(nt, u, v, dt, dx, dy, p, rho, nu):
 		v[-1, :] = 0
 
 		# inlet BCs
-		# u[1:-1, 0] = u_inlet  # BC u at inlet
-		# u[1:-1, 0] = u[1:-1, 1]  # BC u at inlet
 		u[1:-1, 0] = numpy.mean(u[1:-1, -1])  # BC u at inlet
 		v[1:-1, 0] = 0        # BC v at inlet
 
@@ -151,7 +148,7 @@ for i in range(nx):
 end_time = time.time()
 
 print("script run for {:0.0f} seconds".format(end_time - start_time))
-print("nu={:0.1f} u_in={:d} durat={:0.1f}		dt={:0.2f}ms nx={:d} ny={:d}".format(nu, u_inlet, durat,		dt*1000, nx, ny))
+print("nu={:0.1f} durat={:0.0f}ms		dt={:0.3f}us nx={:d} ny={:d}".format(nu, durat*1e3,		dt*1e6, nx, ny))
 print("pressure inlet  : {:0.2f}".format(*tuple(p[int(ny/2), :1])))
 print("mean velocity inlet   : {:0.2f} ".format((numpy.mean(u[1:-1, 0]))))
 print("mean velocity outlet  : {:0.2f} ".format((numpy.mean(u[1:-1, -1]))))
