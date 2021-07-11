@@ -45,6 +45,8 @@ class Pipeline:
 			self.p[0, :] = self.p[1, :]    # dp/dy = 0 at down wall
 			self.p[-1, :] = self.p[-2, :]  # dp/dy = 0 at upper wall
 
+			self.p[9, 40:50] = self.p[8, 40:50]    # dp/dy = 0 at down wall
+			self.p[10, 40:50] = self.p[11, 40:50]    # dp/dy = 0 at down wall
 			# inlet BC
 			self.p[:, 0] = self.p_inlet   # p = MAX at inlet
 			# these are not ordinary BCs, just the inlet pressure is out of area of calculation
@@ -89,6 +91,9 @@ class Pipeline:
 			self.u[-1, :] = 0
 			self.v[-1, :] = 0
 
+			self.u[9, 40:50] = 0
+			self.v[9, 40:50] = 0
+
 			# inlet BCs
 			self.u[1:-1, 0] = numpy.mean(self.u[1:-1, -1])  # BC u at inlet
 			self.v[1:-1, 0] = 0        # BC v at inlet
@@ -107,7 +112,7 @@ def main():
 
 	# geometry and scaling
 	pipe_len   = 5 * 1e-3
-	pipe_width = 0.7 * 1e-3
+	pipe_width = 1.0 * 1e-3
 	nx = int(pipe_len * 20 * 1e3) + 1
 	ny = int(pipe_width * 20 * 1e3) + 1
 	x = numpy.linspace(0, pipe_len, nx)
@@ -115,16 +120,16 @@ def main():
 	X, Y = numpy.meshgrid(x, y)
 
 	# timings
-	dt = .001/10000
-	dur = 0.003
+	dt = .001/10000/1
+	dur = 0.001
 
 	# pressure iterator
-	np_init = 10
+	np_init = 60
 	# p_inlet = 15e5
 	numpy.seterr(invalid='raise')
 	numpy.seterr(over='raise')
 
-	for p_bars in range(1, 24, 1):
+	for p_bars in range(1, 2, 1):
 		for np in range(np_init, 210, 10):
 			print("np = {:d}".format(np))
 			try:
