@@ -119,12 +119,12 @@ def main():
 	dur = 0.003
 
 	# pressure iterator
-	np_init = 10
+	np_init = 60
 	# p_inlet = 15e5
 	numpy.seterr(invalid='raise')
 	numpy.seterr(over='raise')
 
-	for p_bars in range(1, 24, 1):
+	for p_bars in range(16, 17, 1):
 		for np in range(np_init, 210, 10):
 			print("np = {:d}".format(np))
 			try:
