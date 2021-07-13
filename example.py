@@ -54,6 +54,9 @@ class Pipeline:
 
 	def cavity_flow(self):
 
+		latest_printed_progress_percent = 0.0
+		start_time = time.time()
+
 		for n in range(self.nt):
 			un = self.u.copy()
 			vn = self.v.copy()
@@ -97,6 +100,17 @@ class Pipeline:
 			self.u[1:-1, -1] = self.u[1:-1, -2]  # u at outlet layer
 			self.v[1:-1, -1] = self.v[1:-1, -2]  # v at outlet layer
 
+			# printout percentage progress
+			current_progress_percent = numpy.round(100 * n / self.nt, decimals=1)
+			if current_progress_percent - latest_printed_progress_percent > 0.1:
+				latest_printed_progress_percent = current_progress_percent
+				current_time = time.time()
+				print("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b "
+				      "\b\b\b\b\b\b\b\b\b\b \b\b\b\b\b", end='')
+				print("{:d} sec ".format(int(current_time - start_time)), end='', flush=False)
+				print(" progress {:0.1f}% ".format(latest_printed_progress_percent), end='', flush=False)
+				print(" est time {:d} sec".format(int(100 / current_progress_percent * (current_time - start_time))), end='', flush=True)
+
 		return self.u, self.v, self.p, self.xx, self.yy
 
 
@@ -124,7 +138,7 @@ def main():
 	numpy.seterr(invalid='raise')
 	numpy.seterr(over='raise')
 
-	for p_bars in range(16, 17, 1):
+	for p_bars in range(5, 6, 1):
 		for np in range(np_init, 210, 10):
 			print("np = {:d}".format(np))
 			try:
@@ -136,9 +150,11 @@ def main():
 				# (u, v, p, xx, yy) = (pipe.u, pipe.v, pipe.p, pipe.xx, pipe.yy)
 				end_time = time.time()
 			except FloatingPointError:
+				print("\r", end='\n', flush=True)
 				continue
 			else:
 				np_init = np
+				print("\r", end='\n', flush=True)
 				break
 
 		print("script run for {:0.0f} seconds".format(end_time - start_time))
